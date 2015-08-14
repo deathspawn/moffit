@@ -67,7 +67,7 @@ def load_optout(db):
             chan = row["chan"]
             opt_out.append(chan)
 
-@hook.command("starthunt", autohelp=False)
+@hook.command("starthunt", autohelp=False, permissions=["op"])
 def start_hunt(bot, chan, message, conn):
     """This command starts a duckhunt in your channel, to stop the hunt use .stophunt"""
     global game_status
@@ -83,14 +83,14 @@ def start_hunt(bot, chan, message, conn):
     set_ducktime(chan, conn)
     message("Ducks have been spotted nearby. See how many you can shoot or save. use .bang to shoot or .befriend to save them.", chan)
 
-def set_ducktime(chan, conn):
+def set_ducktime(chan, conn, permissions=["op"]):
     global game_status
     game_status[conn.name][chan]['next_duck_time'] = random.randint(int(time()) + 480, int(time()) + 3600)
     #game_status[conn.name][chan]['flyaway'] = game_status[conn.name][chan]['next_duck_time'] + 600
     game_status[conn.name][chan]['duck_status'] = 0
     return
 
-@hook.command("stophunt", autohelp=False)
+@hook.command("stophunt", autohelp=False, permissions=["op"])
 def stop_hunt(chan, conn):
     """This command stops the duck hunt in your channel. Scores will be preserved"""
     global game_status
@@ -102,7 +102,7 @@ def stop_hunt(chan, conn):
     else:
         return "There is no game running in {}.".format(chan)
 
-@hook.command("duckkick")
+@hook.command("duckkick", permissions=["op"])
 def no_duck_kick(text, chan, conn, notice):
     """If the bot has OP or half-op in the channel you can specify .duckkick enable|disable so that people are kicked for shooting or befriending a non-existent goose. Default is off."""
     global game_status
