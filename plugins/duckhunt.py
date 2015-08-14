@@ -83,7 +83,7 @@ def start_hunt(bot, chan, message, conn):
     set_ducktime(chan, conn)
     message("Ducks have been spotted nearby. See how many you can shoot or save. use .bang to shoot or .befriend to save them.", chan)
 
-def set_ducktime(chan, conn, permissions=["op"]):
+def set_ducktime(chan, conn):
     global game_status
     game_status[conn.name][chan]['next_duck_time'] = random.randint(int(time()) + 480, int(time()) + 3600)
     #game_status[conn.name][chan]['flyaway'] = game_status[conn.name][chan]['next_duck_time'] + 600
