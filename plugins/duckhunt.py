@@ -82,7 +82,7 @@ def incrementMsgCounter(event, conn):
         if event.host not in game_status[conn.name][event.chan]['masks']:
             game_status[conn.name][event.chan]['masks'].append(event.host)
 
-@hook.command("starthunt", autohelp=False)
+@hook.command("starthunt", autohelp=False, permissions=["op"])
 def start_hunt(bot, chan, message, conn):
     """This command starts a duckhunt in your channel, to stop the hunt use .stophunt"""
     global game_status
@@ -96,10 +96,13 @@ def start_hunt(bot, chan, message, conn):
     else:
         game_status[conn.name][chan]['game_on'] = 1
     set_ducktime(chan, conn)
-    message("Ducks have been spotted nearby. See how many you can shoot or save. use .bang to shoot or .befriend to save them. NOTE: Ducks now appear as a function of time and channel activity.", chan)
+    message("Ducks have been spotted nearby. See how many you can shoot or save. use .bang to shoot or .befriend to save them. NOTE: Ducks now appear as a function of 
+time and channel activity.", chan)
 
 def set_ducktime(chan, conn):
     global game_status
+    # Testing
+    random.seed(random.uniform(1,10000))
     game_status[conn.name][chan]['next_duck_time'] = random.randint(int(time()) + 480, int(time()) + 3600)
     #game_status[conn.name][chan]['flyaway'] = game_status[conn.name][chan]['next_duck_time'] + 600
     game_status[conn.name][chan]['duck_status'] = 0
@@ -108,7 +111,7 @@ def set_ducktime(chan, conn):
     game_status[conn.name][chan]['masks'] = []
     return
 
-@hook.command("stophunt", autohelp=False)
+@hook.command("stophunt", autohelp=False, permissions=["op"])
 def stop_hunt(chan, conn):
     """This command stops the duck hunt in your channel. Scores will be preserved"""
     global game_status
@@ -120,15 +123,17 @@ def stop_hunt(chan, conn):
     else:
         return "There is no game running in {}.".format(chan)
 
-@hook.command("duckkick")
+@hook.command("duckkick", permissions=["op"])
 def no_duck_kick(text, chan, conn, notice):
-    """If the bot has OP or half-op in the channel you can specify .duckkick enable|disable so that people are kicked for shooting or befriending a non-existent goose. Default is off."""
+    """If the bot has OP or half-op in the channel you can specify .duckkick enable|disable so that people are kicked for shooting or befriending a non-existent goose. 
+Default is off."""
     global game_status
     if chan in opt_out:
         return
     if text.lower() == 'enable':
         game_status[conn.name][chan]['no_duck_kick'] = 1
-        return "users will now be kicked for shooting or befriending non-existent ducks. The bot needs to have appropriate flags to be able to kick users for this to work."
+        return "users will now be kicked for shooting or befriending non-existent ducks. The bot needs to have appropriate flags to be able to kick users for this to 
+work."
     elif text.lower() == 'disable':
         game_status[conn.name][chan]['no_duck_kick'] = 0
         return "kicking for non-existent ducks has been disabled."
@@ -139,13 +144,13 @@ def no_duck_kick(text, chan, conn, notice):
 def generate_duck():
     """Try and randomize the duck message so people can't highlight on it/script against it."""
     rt = random.randint(1, len(duck_tail) - 1)
-    dtail = duck_tail[:rt] + u' \u200b ' + duck_tail[rt:]
+    dtail = duck_tail[:rt] + duck_tail[rt:]
     dbody = random.choice(duck)
     rb = random.randint(1, len(dbody) - 1)
-    dbody = dbody[:rb] + u'\u200b' + dbody[rb:]
+    dbody = dbody[:rb] + dbody[rb:]
     dnoise = random.choice(duck_noise)
     rn = random.randint(1, len(dnoise) - 1)
-    dnoise = dnoise[:rn] + u'\u200b' + dnoise[rn:]
+    dnoise = dnoise[:rn] + dnoise[rn:]
     return (dtail, dbody, dnoise)
 
 
@@ -239,11 +244,13 @@ def bang(nick, chan, message, db, conn, notice):
     out = ""
     miss = ["WHOOSH! You missed the duck completely!", "Your gun jammed!", "Better luck next time.", "WTF!? Who are you Dick Cheney?" ]
     if not game_status[network][chan]['game_on']:
-        return "There is no activehunt right now. Use .starthunt to start a game."
+        # Don't reply when there's no game running.
+        #return "There is no activehunt right now. Use .starthunt to start a game."
+        pass
     elif game_status[network][chan]['duck_status'] != 1:
         if game_status[network][chan]['no_duck_kick'] == 1:
-            out = "KICK {} {} :There is no duck! What are you shooting at?".format(chan, nick)
-            conn.send(out)
+            out = "KICK {} {} There is no duck! What are you shooting at?".format(chan, nick)
+#            conn.send(out)
             return
         return "There is no duck. What are you shooting at?"
     else: 
@@ -292,13 +299,14 @@ def befriend(nick, chan, message, db, conn, notice):
     network = conn.name
     out = ""
     score = ""
-    miss = ["The duck didn't want to be friends, maybe next time.", "Well this is awkward, the duck needs to think about it.", "The duck said no, maybe bribe it with some pizza? Ducks love pizza don't they?", "Who knew ducks could be so picky?"]
+    miss = ["The duck didn't want to be friends, maybe next time.", "Well this is awkward, the duck needs to think about it.", "The duck said no, maybe bribe it with some 
+pizza? Ducks love pizza don't they?", "Who knew ducks could be so picky?"]
     if not game_status[network][chan]['game_on']:
         return "There is no hunt right now. Use .starthunt to start a game."
     elif game_status[network][chan]['duck_status'] != 1:
         if game_status[network][chan]['no_duck_kick'] == 1:
-            out = "KICK {} {} :You tried befriending a non-existent duck, that's fucking creepy.".format(chan, nick)
-            conn.send(out)
+            out = "KICK {} {} You tried befriending a non-existent duck, that's fucking creepy.".format(chan, nick)
+#            conn.send(out)
             return
         return "You tried befriending a non-existent duck, that's fucking creepy."
     else:
@@ -315,7 +323,8 @@ def befriend(nick, chan, message, db, conn, notice):
             scripters[nick.lower()] = shoot + 7
             return out
         if chance == .05:
-            out += "You tried friending that duck in {} seconds, that's mighty fast. Are you sure you aren't a script? Take a 2 hour cool down.".format(str(shoot - deploy))
+            out += "You tried friending that duck in {} seconds, that's mighty fast. Are you sure you aren't a script? Take a 2 hour cool down.".format(str(shoot - 
+deploy))
             scripters[nick.lower()] = shoot + 7200
             if not random.random() <= chance:
                 return random.choice(miss) + " " + out
@@ -444,7 +453,8 @@ def duckforgive(text):
 
 @hook.command("hunt_opt_out", permissions=["op", "ignore"], autohelp=False)
 def hunt_opt_out(text, chan, db, conn):
-    """Running this command without any arguments displays the status of the current channel. hunt_opt_out add #channel will disable all duck hunt commands in the specified channel. hunt_opt_out remove #channel will re-enable the game for the specified channel."""
+    """Running this command without any arguments displays the status of the current channel. hunt_opt_out add #channel will disable all duck hunt commands in the 
+specified channel. hunt_opt_out remove #channel will re-enable the game for the specified channel."""
     if not text:
         if chan in opt_out:
             return "Duck hunt is disabled in {}. To re-enable it run .hunt_opt_out remove #channel".format(chan)
@@ -478,7 +488,8 @@ def hunt_opt_out(text, chan, db, conn):
 
 @hook.command("duckmerge", permissions=["botcontrol"])
 def duck_merge(text, conn, db, message):
-    """Moves the duck scores from one nick to another nick. Accepts two nicks as input the first will have their duck scores removed the second will have the first score added. Warning this cannot be undone."""
+    """Moves the duck scores from one nick to another nick. Accepts two nicks as input the first will have their duck scores removed the second will have the first score 
+added. Warning this cannot be undone."""
     oldnick, newnick = text.lower().split()
     if not oldnick or not newnick:
         return "Please specify two nicks for this command."
@@ -556,7 +567,9 @@ def ducks_user(text, nick, chan, conn, db, message):
             return
         kill_average = int(ducks["killed"] / ducks["chans"])
         friend_average = int(ducks["friend"] / ducks["chans"])
-        message("\x02{}'s\x02 duck stats: \x02{}\x02 killed and \x02{}\x02 befriended in {}. Across {} channels: \x02{}\x02 killed and \x02{}\x02 befriended. Averaging \x02{}\x02 kills and \x02{}\x02 friends per channel.".format(name, ducks["chankilled"], ducks["chanfriends"], chan, ducks["chans"], ducks["killed"], ducks["friend"], kill_average, friend_average))
+        message("\x02{}'s\x02 duck stats: \x02{}\x02 killed and \x02{}\x02 befriended in {}. Across {} channels: \x02{}\x02 killed and \x02{}\x02 befriended. Averaging 
+\x02{}\x02 kills and \x02{}\x02 friends per channel.".format(name, ducks["chankilled"], ducks["chanfriends"], chan, ducks["chans"], ducks["killed"], ducks["friend"], 
+kill_average, friend_average))
     else:
         return "It appears {} has not participated in the duck hunt.".format(name)
 
@@ -581,6 +594,8 @@ def duck_stats(chan, conn, db, message):
         ducks["chans"] = int((len(ducks["friendchan"]) + len(ducks["killchan"])) / 2)
         killerchan, killscore = sorted(ducks["killchan"].items(), key=operator.itemgetter(1), reverse = True)[0]
         friendchan, friendscore = sorted(ducks["friendchan"].items(), key=operator.itemgetter(1), reverse =True)[0]
-        message("\x02Duck Stats:\x02 {} killed and {} befriended in \x02{}\x02. Across {} channels \x02{}\x02 ducks have been killed and \x02{}\x02 befriended. \x02Top Channels:\x02 \x02{}\x02 with {} kills and \x02{}\x02 with {} friends".format(ducks["chankilled"], ducks["chanfriends"], chan, ducks["chans"], ducks["killed"], ducks["friend"], killerchan, killscore, friendchan, friendscore))
+        message("\x02Duck Stats:\x02 {} killed and {} befriended in \x02{}\x02. Across {} channels \x02{}\x02 ducks have been killed and \x02{}\x02 befriended. \x02Top 
+Channels:\x02 \x02{}\x02 with {} kills and \x02{}\x02 with {} friends".format(ducks["chankilled"], ducks["chanfriends"], chan, ducks["chans"], ducks["killed"], 
+ducks["friend"], killerchan, killscore, friendchan, friendscore))
     else:
         return "It looks like there has been no duck activity on this channel or network."
